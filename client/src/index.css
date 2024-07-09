@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the project */
+body {
+  @apply bg-light font-inter;
+}
+
+header {
+  @apply text-center py-6 bg-white shadow-md;
+}
+
+nav a {
+  @apply mx-2 text-primary hover:underline;
+}
+
+nav {
+  @apply mt-4;
+}
+
+h1 {
+  @apply text-5xl font-bold text-primary;
+}
+
+.main-title {
+  @apply text-4xl font-bold text-secondary mt-6;
+}
+
+section {
+  @apply my-8;
+}
+
+.footer {
+  @apply bg-dark text-white p-6;
+}
+
+.footer a {
+  @apply text-accent hover:underline;
+}
+
+button {
+  @apply bg-primary text-white px-4 py-2 rounded hover:bg-secondary;
+}
