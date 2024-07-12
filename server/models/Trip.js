@@ -1,16 +1,27 @@
-// server/models/Trip.js
+// models/Trip.js
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-const TripSchema = new Schema({
-    destination: { type: String, required: true },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true },
-    activities: [{ type: String }],
-    bookings: [{
-        type: { type: String, required: true },
-        details: { type: String, required: true },
-    }],
+const tripSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  destination: {
+    type: String,
+    required: true,
+  },
+  startDate: {
+    type: Date,
+    required: true,
+  },
+  endDate: {
+    type: Date,
+    required: true,
+  },
+  notes: String,
 });
 
-module.exports = mongoose.model('Trip', TripSchema);
+const Trip = mongoose.model('Trip', tripSchema);
+
+module.exports = Trip;

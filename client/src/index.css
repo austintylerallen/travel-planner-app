@@ -42,3 +42,77 @@ section {
 button {
   @apply bg-primary text-white px-4 py-2 rounded hover:bg-secondary;
 }
+
+
+.auth-container {
+  max-width: 400px;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.auth-container h2 {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.auth-container form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-container form div {
+  margin-bottom: 15px;
+}
+
+.auth-container form label {
+  margin-bottom: 5px;
+}
+
+.auth-container form input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.auth-container button {
+  padding: 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.auth-container button:hover {
+  background: #0056b3;
+}
+
+.auth-container .toggle-button {
+  margin-top: 10px;
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.auth-container .toggle-button:hover {
+  color: #0056b3;
+}
+
+.landing-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.landing-page h1 {
+  margin-bottom: 20px;
+}

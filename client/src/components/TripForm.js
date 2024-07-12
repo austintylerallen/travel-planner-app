@@ -1,101 +1,102 @@
-// client/src/components/TripForm.js
-import React, { useState } from 'react';
+// components/TripForm.jsx
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const TripForm = () => {
-  const [trip, setTrip] = useState({
-    destination: '',
-    startDate: '',
-    endDate: '',
-    activities: '',
-    bookings: '',
-  });
+  const [destination, setDestination] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [notes, setNotes] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
+  const { id } = useParams();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setTrip({ ...trip, [name]: value });
-  };
+  useEffect(() => {
+    if (id) {
+      // Fetch the trip details to edit
+      axios.get(`http://localhost:4000/api/trips/${id}`)
+        .then(response => {
+          const { destination, startDate, endDate, notes } = response.data;
+          setDestination(destination);
+          setStartDate(startDate.substring(0, 10)); // Format date for input
+          setEndDate(endDate.substring(0, 10)); // Format date for input
+          setNotes(notes);
+        })
+        .catch(error => setError('Error fetching trip details'));
+    }
+  }, [id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formattedTrip = {
-      ...trip,
-      activities: trip.activities.split(',').map((activity) => activity.trim()),
-      bookings: [{ type: 'example', details: trip.bookings }],
-    };
+    const tripData = { destination, startDate, endDate, notes };
     try {
-      await axios.post('http://localhost:5000/trips', formattedTrip);
-      alert('Trip created successfully');
-    } catch (err) {
-      console.error(err);
-      alert('Error creating trip');
+      if (id) {
+        // Update existing trip
+        await axios.put(`http://localhost:4000/api/trips/${id}`, tripData, { withCredentials: true });
+        setSuccess('Trip updated successfully');
+      } else {
+        // Create new trip
+        await axios.post('http://localhost:4000/api/trips', tripData, { withCredentials: true });
+        setSuccess('Trip created successfully');
+      }
+      setError('');
+      setTimeout(() => navigate('/trips'), 2000);
+    } catch (error) {
+      setError(error.response?.data.message || 'Error creating/updating trip');
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded shadow-md">
-      <h2 className="text-2xl font-bold text-green-600 mb-4">Create a Trip</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label className="block text-gray-700">Destination</label>
+    <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md mx-auto">
+      <h2 className="text-2xl font-bold mb-6 text-center">{id ? 'Edit Trip' : 'Create Trip'}</h2>
+      {error && <div className="text-red-500 text-center mb-4">{error}</div>}
+      {success && <div className="text-green-500 text-center mb-4">{success}</div>}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-gray-700">Destination:</label>
           <input
             type="text"
-            name="destination"
-            value={trip.destination}
-            onChange={handleChange}
-            className="mt-1 p-2 w-full border rounded"
+            value={destination}
+            onChange={(e) => setDestination(e.target.value)}
+            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block text-gray-700">Start Date</label>
+        <div>
+          <label className="block text-gray-700">Start Date:</label>
           <input
             type="date"
-            name="startDate"
-            value={trip.startDate}
-            onChange={handleChange}
-            className="mt-1 p-2 w-full border rounded"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block text-gray-700">End Date</label>
+        <div>
+          <label className="block text-gray-700">End Date:</label>
           <input
             type="date"
-            name="endDate"
-            value={trip.endDate}
-            onChange={handleChange}
-            className="mt-1 p-2 w-full border rounded"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block text-gray-700">Activities (comma separated)</label>
-          <input
-            type="text"
-            name="activities"
-            value={trip.activities}
-            onChange={handleChange}
-            className="mt-1 p-2 w-full border rounded"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700">Booking Details</label>
-          <input
-            type="text"
-            name="bookings"
-            value={trip.bookings}
-            onChange={handleChange}
-            className="mt-1 p-2 w-full border rounded"
-            required
+        <div>
+          <label className="block text-gray-700">Notes:</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
           />
         </div>
         <button
           type="submit"
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700"
+          className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors"
         >
-          Create Trip
+          {id ? 'Update Trip' : 'Create Trip'}
         </button>
       </form>
     </div>
