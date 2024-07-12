@@ -24,23 +24,21 @@ const TripList = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6 text-center">My Trips</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">Trips</h2>
       {error && <div className="text-red-500 text-center mb-4">{error}</div>}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
         {trips.map(trip => (
           <div key={trip._id} className="bg-white p-4 rounded-lg shadow-md">
             <h3 className="text-xl font-bold">{trip.destination}</h3>
-            <p>{new Date(trip.startDate).toLocaleDateString()} - {new Date(trip.endDate).toLocaleDateString()}</p>
-            <p>{trip.notes}</p>
-            <div className="flex justify-end space-x-4 mt-4">
+            <p>Start Date: {new Date(trip.startDate).toLocaleDateString()}</p>
+            <p>End Date: {new Date(trip.endDate).toLocaleDateString()}</p>
+            <p>Notes: {trip.notes}</p>
+            <div className="mt-4 flex justify-between">
               <Link to={`/edit/${trip._id}`} className="text-primary hover:underline">Edit</Link>
               <button onClick={() => handleDelete(trip._id)} className="text-red-500 hover:underline">Delete</button>
             </div>
           </div>
         ))}
-      </div>
-      <div className="flex justify-end mt-6">
-        <Link to="/create" className="text-primary hover:underline">Create New Trip</Link>
       </div>
     </div>
   );
