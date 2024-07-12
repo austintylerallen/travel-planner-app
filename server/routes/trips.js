@@ -1,80 +1,61 @@
-// routes/trips.js
+// server/routes/trips.js
 const express = require('express');
-const Trip = require('../models/Trip');
 const router = express.Router();
-const authMiddleware = require('../routes/auth');
+const Trip = require('../models/Trip');
 
-// Get all trips for the authenticated user
-router.get('/', authMiddleware, async (req, res) => {
+// Create a new trip
+router.post('/', async (req, res) => {
+  const { destination, startDate, endDate, notes } = req.body;
   try {
-    const trips = await Trip.find({ user: req.user._id });
-    res.json(trips);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching trips', error: err.message });
+    const newTrip = new Trip({ destination, startDate, endDate, notes });
+    await newTrip.save();
+    res.status(201).json(newTrip);
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong' });
   }
 });
 
-// Create a new trip
-router.post('/', authMiddleware, async (req, res) => {
-  const { destination, startDate, endDate, notes } = req.body;
+// Get all trips
+router.get('/', async (req, res) => {
   try {
-    const newTrip = new Trip({
-      user: req.user._id,
-      destination,
-      startDate,
-      endDate,
-      notes,
-    });
-    await newTrip.save();
-    res.status(201).json(newTrip);
-  } catch (err) {
-    res.status(500).json({ message: 'Error creating trip', error: err.message });
+    const trips = await Trip.find();
+    res.status(200).json(trips);
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong' });
   }
 });
 
 // Get a specific trip
-router.get('/:id', authMiddleware, async (req, res) => {
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
   try {
-    const trip = await Trip.findById(req.params.id);
-    if (!trip || trip.user.toString() !== req.user._id.toString()) {
-      return res.status(404).json({ message: 'Trip not found' });
-    }
-    res.json(trip);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching trip', error: err.message });
+    const trip = await Trip.findById(id);
+    res.status(200).json(trip);
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong' });
   }
 });
 
 // Update a trip
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
   const { destination, startDate, endDate, notes } = req.body;
   try {
-    let trip = await Trip.findById(req.params.id);
-    if (!trip || trip.user.toString() !== req.user._id.toString()) {
-      return res.status(404).json({ message: 'Trip not found' });
-    }
-    trip.destination = destination;
-    trip.startDate = startDate;
-    trip.endDate = endDate;
-    trip.notes = notes;
-    await trip.save();
-    res.json(trip);
-  } catch (err) {
-    res.status(500).json({ message: 'Error updating trip', error: err.message });
+    const updatedTrip = await Trip.findByIdAndUpdate(id, { destination, startDate, endDate, notes }, { new: true });
+    res.status(200).json(updatedTrip);
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong' });
   }
 });
 
 // Delete a trip
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
   try {
-    const trip = await Trip.findById(req.params.id);
-    if (!trip || trip.user.toString() !== req.user._id.toString()) {
-      return res.status(404).json({ message: 'Trip not found' });
-    }
-    await trip.remove();
-    res.json({ message: 'Trip deleted' });
-  } catch (err) {
-    res.status(500).json({ message: 'Error deleting trip', error: err.message });
+    await Trip.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Trip deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Something went wrong' });
   }
 });
 

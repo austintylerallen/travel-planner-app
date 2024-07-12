@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// src/App.jsx
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Home from './components/Home';
 import TripForm from './components/TripForm';
@@ -10,17 +11,14 @@ import Contact from './components/Contact';
 import AuthPage from './components/AuthPage';
 import Profile from './components/Profile';
 import EditProfile from './components/EditProfile';
+import { useAuth } from './context/AuthContext';
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-100 font-inter">
+      <div className="min-h-screen bg-light font-inter">
         <header className="text-center py-6 bg-white shadow-md">
           <h1 className="text-5xl font-bold text-primary">PeakPursuit</h1>
           {isAuthenticated && (
@@ -33,6 +31,7 @@ const App = () => {
               <Link to="/gallery" className="mx-2 text-primary hover:underline">Gallery</Link>
               <Link to="/contact" className="mx-2 text-primary hover:underline">Contact</Link>
               <Link to="/profile" className="mx-2 text-primary hover:underline">Profile</Link>
+              <button onClick={logout} className="mx-2 text-primary hover:underline">Logout</button>
             </nav>
           )}
         </header>
@@ -52,12 +51,12 @@ const App = () => {
                 <Route path="/profile/edit" element={<EditProfile />} />
               </>
             ) : (
-              <Route path="/" element={<AuthPage onLogin={handleLogin} />} />
+              <Route path="/" element={<AuthPage />} />
             )}
           </Routes>
         </main>
         {isAuthenticated && (
-          <footer className="footer text-center bg-gray-800 text-white p-6">
+          <footer className="footer text-center bg-dark text-white p-6">
             <p>&copy; 2024 PeakPursuit. All rights reserved.</p>
             <div className="mt-4">
               <Link to="/" className="mx-2 text-accent hover:underline">Home</Link>

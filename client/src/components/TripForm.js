@@ -1,4 +1,4 @@
-// components/TripForm.jsx
+// src/components/TripForm.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -15,13 +15,12 @@ const TripForm = () => {
 
   useEffect(() => {
     if (id) {
-      // Fetch the trip details to edit
       axios.get(`http://localhost:4000/api/trips/${id}`)
         .then(response => {
           const { destination, startDate, endDate, notes } = response.data;
           setDestination(destination);
-          setStartDate(startDate.substring(0, 10)); // Format date for input
-          setEndDate(endDate.substring(0, 10)); // Format date for input
+          setStartDate(startDate.substring(0, 10));
+          setEndDate(endDate.substring(0, 10));
           setNotes(notes);
         })
         .catch(error => setError('Error fetching trip details'));
@@ -33,11 +32,9 @@ const TripForm = () => {
     const tripData = { destination, startDate, endDate, notes };
     try {
       if (id) {
-        // Update existing trip
         await axios.put(`http://localhost:4000/api/trips/${id}`, tripData, { withCredentials: true });
         setSuccess('Trip updated successfully');
       } else {
-        // Create new trip
         await axios.post('http://localhost:4000/api/trips', tripData, { withCredentials: true });
         setSuccess('Trip created successfully');
       }
