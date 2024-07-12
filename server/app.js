@@ -1,26 +1,47 @@
-// server/app.js
+// server.js
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const tripsRouter = require('./routes/trips');
-require('dotenv').config(); // Load environment variables from .env file
+const mongoose = require('mongoose');
+const authRouter = require('./routes/auth'); // Adjust as per your routes
+const tripRouter = require('./routes/trips');
+
+// Add after the auth routes
+
+
+require('dotenv').config();
 
 const app = express();
 
-const mongoURI = process.env.MONGOURI;
+const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/yourdbname';
 
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Connected to MongoDB'))
-    .catch((err) => console.error('Error connecting to MongoDB', err));
+mongoose
+  .connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((err) => console.error('Error connecting to MongoDB', err));
 
-app.use(cors());
+// CORS configuration
+app.use(cors({
+  origin: 'http://localhost:3001', // Replace with your frontend URL
+  credentials: true, // This allows cookies to be sent with the requests
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
 app.use(bodyParser.json());
 
-app.use('/trips', tripsRouter);
+app.use('/api/auth', authRouter); // Use the authentication routes
+app.use('/api/trips', tripRouter);
 
 app.get('/', (req, res) => {
-    res.send('Server is running');
+  res.send('Server is running');
 });
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 module.exports = app;
