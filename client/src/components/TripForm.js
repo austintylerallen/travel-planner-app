@@ -1,65 +1,87 @@
-// components/TripForm.jsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom';
+import axios from '../utils/axios';
+import { useParams } from 'react-router-dom';
 
-const TripForm = () => {
-  const [destination, setDestination] = useState('');
+const TripForm = ({ onTripAdded }) => {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [notes, setNotes] = useState('');
+  const [destination, setDestination] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const navigate = useNavigate();
   const { id } = useParams();
+  const isEditing = !!id;
 
   useEffect(() => {
-    if (id) {
-      axios.get(`http://localhost:4000/api/trips/${id}`)
-        .then(response => {
-          const { destination, startDate, endDate, notes } = response.data;
-          setDestination(destination);
-          setStartDate(startDate.substring(0, 10));
-          setEndDate(endDate.substring(0, 10));
-          setNotes(notes);
-        })
-        .catch(error => setError('Error fetching trip details'));
+    if (isEditing) {
+      const fetchTrip = async () => {
+        try {
+          const response = await axios.get(`/trips/${id}`);
+          const trip = response.data;
+          setTitle(trip.title);
+          setDescription(trip.description);
+          setStartDate(trip.startDate.split('T')[0]);
+          setEndDate(trip.endDate.split('T')[0]);
+          setDestination(trip.destination);
+        } catch (err) {
+          setError('Error fetching trip data');
+        }
+      };
+      fetchTrip();
     }
-  }, [id]);
+  }, [id, isEditing]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const tripData = { destination, startDate, endDate, notes };
+
     try {
-      if (id) {
-        await axios.put(`http://localhost:4000/api/trips/${id}`, tripData, { withCredentials: true });
-        setSuccess('Trip updated successfully');
+      if (isEditing) {
+        const response = await axios.put(`/trips/${id}`, {
+          title,
+          description,
+          startDate,
+          endDate,
+          destination,
+        });
+        onTripAdded(response.data);
       } else {
-        await axios.post('http://localhost:4000/api/trips', tripData, { withCredentials: true });
-        setSuccess('Trip created successfully');
+        const response = await axios.post('/trips', {
+          title,
+          description,
+          startDate,
+          endDate,
+          destination,
+        });
+        onTripAdded(response.data);
       }
-      setError('');
-      setTimeout(() => navigate('/trips'), 2000);
-    } catch (error) {
-      setError(error.response?.data.message || 'Error creating/updating trip');
+    } catch (err) {
+      setError('Error creating trip');
     }
   };
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">{id ? 'Edit Trip' : 'Create Trip'}</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">{isEditing ? 'Edit Trip' : 'Create Trip'}</h2>
       {error && <div className="text-red-500 text-center mb-4">{error}</div>}
-      {success && <div className="text-green-500 text-center mb-4">{success}</div>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-gray-700">Destination:</label>
+          <label className="block text-gray-700">Trip Title:</label>
           <input
             type="text"
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
             required
           />
+        </div>
+        <div>
+          <label className="block text-gray-700">Description:</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
+            required
+          ></textarea>
         </div>
         <div>
           <label className="block text-gray-700">Start Date:</label>
@@ -82,18 +104,17 @@ const TripForm = () => {
           />
         </div>
         <div>
-          <label className="block text-gray-700">Notes:</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+          <label className="block text-gray-700">Destination:</label>
+          <input
+            type="text"
+            value={destination}
+            onChange={(e) => setDestination(e.target.value)}
             className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
+            required
           />
         </div>
-        <button
-          type="submit"
-          className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors"
-        >
-          {id ? 'Update Trip' : 'Create Trip'}
+        <button type="submit" className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
+          {isEditing ? 'Update Trip' : 'Create Trip'}
         </button>
       </form>
     </div>
