@@ -1,67 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../utils/axios';
-import { useParams } from 'react-router-dom';
+import FlightSearch from './FlightSearch';
 
-const TripForm = ({ onTripAdded }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [destination, setDestination] = useState('');
+const TripForm = ({ trip, onClose }) => {
+  const [title, setTitle] = useState(trip ? trip.title : '');
+  const [description, setDescription] = useState(trip ? trip.description : '');
+  const [startDate, setStartDate] = useState(trip ? trip.startDate : '');
+  const [endDate, setEndDate] = useState(trip ? trip.endDate : '');
+  const [destination, setDestination] = useState(trip ? trip.destination : '');
   const [error, setError] = useState('');
-  const { id } = useParams();
-  const isEditing = !!id;
+  const [showFlightSearch, setShowFlightSearch] = useState(false);
+  const [flights, setFlights] = useState([]);
 
   useEffect(() => {
-    if (isEditing) {
-      const fetchTrip = async () => {
-        try {
-          const response = await axios.get(`/trips/${id}`);
-          const trip = response.data;
-          setTitle(trip.title);
-          setDescription(trip.description);
-          setStartDate(trip.startDate.split('T')[0]);
-          setEndDate(trip.endDate.split('T')[0]);
-          setDestination(trip.destination);
-        } catch (err) {
-          setError('Error fetching trip data');
-        }
-      };
-      fetchTrip();
+    if (trip) {
+      setTitle(trip.title);
+      setDescription(trip.description);
+      setStartDate(trip.startDate);
+      setEndDate(trip.endDate);
+      setDestination(trip.destination);
+      setFlights(trip.flights || []);
     }
-  }, [id, isEditing]);
+  }, [trip]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const tripData = {
+      title,
+      description,
+      startDate,
+      endDate,
+      destination,
+      flights,
+    };
+
     try {
-      if (isEditing) {
-        const response = await axios.put(`/trips/${id}`, {
-          title,
-          description,
-          startDate,
-          endDate,
-          destination,
-        });
-        onTripAdded(response.data);
+      if (trip) {
+        await axios.put(`/trips/${trip._id}`, tripData);
       } else {
-        const response = await axios.post('/trips', {
-          title,
-          description,
-          startDate,
-          endDate,
-          destination,
-        });
-        onTripAdded(response.data);
+        await axios.post('/trips', tripData);
       }
+      onClose();
     } catch (err) {
-      setError('Error creating trip');
+      console.error('Error creating/updating trip', err);
+      setError('Error creating/updating trip');
     }
+  };
+
+  const handleFlightSelected = (flightData) => {
+    setFlights([...flights, flightData]);
+    setShowFlightSearch(false);
   };
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">{isEditing ? 'Edit Trip' : 'Create Trip'}</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">{trip ? 'Edit Trip' : 'Create Trip'}</h2>
       {error && <div className="text-red-500 text-center mb-4">{error}</div>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -113,10 +107,17 @@ const TripForm = ({ onTripAdded }) => {
             required
           />
         </div>
+        <div>
+          <label className="block text-gray-700">Will you be flying to your destination?</label>
+          <button type="button" onClick={() => setShowFlightSearch(true)} className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
+            Search Flights
+          </button>
+        </div>
         <button type="submit" className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
-          {isEditing ? 'Update Trip' : 'Create Trip'}
+          {trip ? 'Update Trip' : 'Create Trip'}
         </button>
       </form>
+      {showFlightSearch && <FlightSearch onFlightSelected={handleFlightSelected} />}
     </div>
   );
 };

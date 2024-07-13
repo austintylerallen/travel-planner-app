@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Route, Routes, Link, useNavigate } from 'react-router-dom';
+import { Route, Routes, Link } from 'react-router-dom';
 import Home from './components/Home';
 import TripForm from './components/TripForm';
 import TripList from './components/TripList';
@@ -11,20 +11,20 @@ import AuthPage from './components/AuthPage';
 import Profile from './components/Profile';
 import EditProfile from './components/EditProfile';
 import { useAuth } from './context/AuthContext';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#root');
 
 const App = () => {
   const { isAuthenticated, logout } = useAuth();
-  const [trips, setTrips] = useState([]);
-  const navigate = useNavigate();
+  const [selectedTrip, setSelectedTrip] = useState(null);
 
-  const handleTripAdded = (newTrip) => {
-    setTrips([...trips, newTrip]);
-    navigate('/trips'); // Redirect to trip list page
+  const handleEditTrip = (trip) => {
+    setSelectedTrip(trip);
   };
 
-  const handleTripUpdated = (updatedTrip) => {
-    setTrips(trips.map(trip => trip._id === updatedTrip._id ? updatedTrip : trip));
-    navigate('/trips'); // Redirect to trip list page
+  const handleCloseModal = () => {
+    setSelectedTrip(null);
   };
 
   return (
@@ -50,9 +50,9 @@ const App = () => {
           {isAuthenticated ? (
             <>
               <Route path="/" element={<Home />} />
-              <Route path="/create" element={<TripForm onTripAdded={handleTripAdded} />} />
-              <Route path="/trips" element={<TripList trips={trips} setTrips={setTrips} />} />
-              <Route path="/edit/:id" element={<TripForm onTripUpdated={handleTripUpdated} />} />
+              <Route path="/create" element={<TripForm onClose={handleCloseModal} />} />
+              <Route path="/trips" element={<TripList onEditTrip={handleEditTrip} />} />
+              <Route path="/edit/:id" element={<TripForm onClose={handleCloseModal} />} />
               <Route path="/flights" element={<FlightSearch />} />
               <Route path="/about" element={<About />} />
               <Route path="/gallery" element={<Gallery />} />
@@ -75,6 +75,11 @@ const App = () => {
             <Link to="/contact" className="mx-2 text-accent hover:underline">Contact</Link>
           </div>
         </footer>
+      )}
+      {selectedTrip && (
+        <Modal isOpen={!!selectedTrip} onRequestClose={handleCloseModal}>
+          <TripForm trip={selectedTrip} onClose={handleCloseModal} />
+        </Modal>
       )}
     </div>
   );

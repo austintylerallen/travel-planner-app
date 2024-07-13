@@ -33,7 +33,7 @@ const FlightSearch = ({ onFlightSelected }) => {
       arrivalTime: flightSegment.arrival.at || 'N/A',
     };
 
-    onFlightSelected(flightData); // Call onFlightSelected with flight data
+    onFlightSelected(flightData);
   };
 
   return (
