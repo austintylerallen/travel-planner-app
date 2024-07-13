@@ -13,7 +13,7 @@ const FlightSearch = ({ onFlightSelected }) => {
 
     try {
       const response = await axios.get('/flights/search', {
-        params: { origin, destination, date }
+        params: { origin, destination, date, adults: 1 }
       });
       setFlights(response.data.data || []);
     } catch (err) {

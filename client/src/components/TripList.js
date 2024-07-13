@@ -1,28 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import axios from '../utils/axios';
 
-const TripList = ({ onEditTrip }) => {
-  const [trips, setTrips] = useState([]);
-
-  useEffect(() => {
-    const fetchTrips = async () => {
-      try {
-        const response = await axios.get('/trips');
-        setTrips(response.data);
-      } catch (err) {
-        console.error('Error fetching trips', err);
-      }
-    };
-
-    fetchTrips();
-  }, []);
-
+const TripList = ({ trips, setTrips, onEdit }) => {
   const handleDelete = async (id) => {
     try {
       await axios.delete(`/trips/${id}`);
-      setTrips(trips.filter((trip) => trip._id !== id));
+      setTrips(trips.filter(trip => trip._id !== id));
+      alert('Trip deleted successfully');
     } catch (err) {
-      console.error('Error deleting trip', err);
+      alert('Error deleting trip');
     }
   };
 
@@ -34,13 +20,30 @@ const TripList = ({ onEditTrip }) => {
           <li key={trip._id} className="bg-white p-4 rounded-lg shadow-md">
             <h3 className="text-xl font-bold">{trip.title}</h3>
             <p>{trip.description}</p>
-            <p>Start Date: {trip.startDate}</p>
-            <p>End Date: {trip.endDate}</p>
+            <p>{trip.startDate} - {trip.endDate}</p>
             <p>Destination: {trip.destination}</p>
-            <button onClick={() => onEditTrip(trip)} className="bg-blue-500 text-white py-1 px-3 rounded-md mt-2 hover:bg-blue-700 transition-colors">
+            {trip.flights && trip.flights.length > 0 && (
+              <div>
+                <h4 className="font-bold mt-4">Flights:</h4>
+                <ul className="list-disc list-inside">
+                  {trip.flights.map((flight, index) => (
+                    <li key={index}>
+                      {flight.airline} {flight.flightNumber} from {flight.departureAirport} at {flight.departureTime} to {flight.arrivalAirport} at {flight.arrivalTime}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <button
+              onClick={() => onEdit(trip)}
+              className="bg-blue-500 text-white py-1 px-3 rounded-md mt-2 hover:bg-blue-700 transition-colors"
+            >
               Edit
             </button>
-            <button onClick={() => handleDelete(trip._id)} className="bg-red-500 text-white py-1 px-3 rounded-md mt-2 hover:bg-red-700 transition-colors">
+            <button
+              onClick={() => handleDelete(trip._id)}
+              className="bg-red-500 text-white py-1 px-3 rounded-md mt-2 hover:bg-red-700 transition-colors ml-2"
+            >
               Delete
             </button>
           </li>

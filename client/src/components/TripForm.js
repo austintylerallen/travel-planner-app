@@ -1,27 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from '../utils/axios';
 import FlightSearch from './FlightSearch';
 
-const TripForm = ({ trip, onClose }) => {
+const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
   const [title, setTitle] = useState(trip ? trip.title : '');
   const [description, setDescription] = useState(trip ? trip.description : '');
   const [startDate, setStartDate] = useState(trip ? trip.startDate : '');
   const [endDate, setEndDate] = useState(trip ? trip.endDate : '');
   const [destination, setDestination] = useState(trip ? trip.destination : '');
-  const [error, setError] = useState('');
   const [showFlightSearch, setShowFlightSearch] = useState(false);
-  const [flights, setFlights] = useState([]);
-
-  useEffect(() => {
-    if (trip) {
-      setTitle(trip.title);
-      setDescription(trip.description);
-      setStartDate(trip.startDate);
-      setEndDate(trip.endDate);
-      setDestination(trip.destination);
-      setFlights(trip.flights || []);
-    }
-  }, [trip]);
+  const [error, setError] = useState('');
+  const [createdTrip, setCreatedTrip] = useState(trip || null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,25 +21,37 @@ const TripForm = ({ trip, onClose }) => {
       startDate,
       endDate,
       destination,
-      flights,
     };
 
     try {
+      let savedTrip;
       if (trip) {
-        await axios.put(`/trips/${trip._id}`, tripData);
+        savedTrip = await axios.put(`/trips/${trip._id}`, tripData);
+        onTripUpdated(savedTrip.data);
       } else {
-        await axios.post('/trips', tripData);
+        const response = await axios.post('/trips', tripData);
+        savedTrip = response.data;
+        setCreatedTrip(savedTrip);
+        onTripAdded(savedTrip);
       }
-      onClose();
+      setError('');
+      if (onClose) onClose();
     } catch (err) {
-      console.error('Error creating/updating trip', err);
       setError('Error creating/updating trip');
     }
   };
 
-  const handleFlightSelected = (flightData) => {
-    setFlights([...flights, flightData]);
-    setShowFlightSearch(false);
+  const handleFlightSelected = async (flight) => {
+    if (createdTrip) {
+      try {
+        await axios.post(`/trips/${createdTrip._id}/add-flight`, flight);
+        alert('Flight added to trip successfully');
+      } catch (err) {
+        setError('Error adding flight to trip');
+      }
+    } else {
+      alert('Please create the trip first');
+    }
   };
 
   return (
@@ -107,17 +108,21 @@ const TripForm = ({ trip, onClose }) => {
             required
           />
         </div>
-        <div>
-          <label className="block text-gray-700">Will you be flying to your destination?</label>
-          <button type="button" onClick={() => setShowFlightSearch(true)} className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
-            Search Flights
-          </button>
-        </div>
         <button type="submit" className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
           {trip ? 'Update Trip' : 'Create Trip'}
         </button>
       </form>
-      {showFlightSearch && <FlightSearch onFlightSelected={handleFlightSelected} />}
+      {createdTrip && (
+        <div className="mt-6 text-center">
+          <button
+            className="bg-secondary text-white py-2 px-4 rounded-md hover:bg-secondary-dark transition-colors"
+            onClick={() => setShowFlightSearch(!showFlightSearch)}
+          >
+            {showFlightSearch ? 'Hide Flight Search' : 'Search Flights'}
+          </button>
+          {showFlightSearch && <FlightSearch onFlightSelected={handleFlightSelected} />}
+        </div>
+      )}
     </div>
   );
 };
