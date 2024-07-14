@@ -1,10 +1,13 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+require('dotenv').config(); // Ensure dotenv is required to load environment variables
 
 router.get('/place-details', async (req, res) => {
   const { input } = req.query;
   const googlePlacesApiKey = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
+
+  console.log('Using Google Places API Key:', googlePlacesApiKey); // Log API key for debugging
 
   try {
     console.log('Fetching place details for input:', input); // Log input
@@ -19,8 +22,8 @@ router.get('/place-details', async (req, res) => {
     console.log('Place details response:', response.data); // Log response data
     res.status(200).json(response.data);
   } catch (error) {
-    console.error('Error fetching place details:', error);
-    res.status(500).json({ message: 'Error fetching place details', error });
+    console.error('Error fetching place details:', error.response ? error.response.data : error.message);
+    res.status(500).json({ message: 'Error fetching place details', error: error.response ? error.response.data : error.message });
   }
 });
 

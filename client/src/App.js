@@ -56,6 +56,18 @@ const App = () => {
     }
   };
 
+  useEffect(() => {
+    const injectGoogleMapsScript = () => {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}&libraries=places&callback=initMap`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    };
+
+    injectGoogleMapsScript();
+  }, []);
+
   return (
     <div className="min-h-screen bg-light font-inter">
       <header className="text-center py-6 bg-white shadow-md">

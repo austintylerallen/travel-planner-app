@@ -2,12 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 const authRouter = require('./routes/auth');
 const tripRouter = require('./routes/trips');
 const flightRouter = require('./routes/flights');
 const googlePlacesRouter = require('./routes/googlePlaces'); // Import the Google Places route
 
-require('dotenv').config();
+dotenv.config(); // Load environment variables
 
 const app = express();
 
