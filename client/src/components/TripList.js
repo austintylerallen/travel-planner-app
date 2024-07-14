@@ -1,11 +1,11 @@
+// src/components/TripList.js
 import React from 'react';
 import axios from '../utils/axios';
 
-const TripList = ({ trips, setTrips, onEdit }) => {
+const TripList = ({ trips, onEdit }) => {
   const handleDelete = async (id) => {
     try {
       await axios.delete(`/trips/${id}`);
-      setTrips(trips.filter(trip => trip._id !== id));
       alert('Trip deleted successfully');
     } catch (err) {
       alert('Error deleting trip');

@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const authRouter = require('./routes/auth');
 const tripRouter = require('./routes/trips');
 const flightRouter = require('./routes/flights');
+const googlePlacesRouter = require('./utils'); // Add this line
 
 require('dotenv').config();
 
@@ -34,6 +35,7 @@ app.use(bodyParser.json());
 app.use('/api/auth', authRouter); // Use the authentication routes
 app.use('/api/trips', tripRouter); // Use the trip routes
 app.use('/api/flights', flightRouter); // Use the flight routes
+app.use('/api/google-places', googlePlacesRouter); // Use the Google Places routes
 
 app.get('/', (req, res) => {
   res.send('Server is running');

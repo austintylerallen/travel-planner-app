@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from '../utils/axios';
 import FlightSearch from './FlightSearch';
+import { fetchPlaceDetails } from '../utils/googlePlaces';
 
 const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
   const [title, setTitle] = useState(trip ? trip.title : '');
@@ -11,6 +12,7 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
   const [showFlightSearch, setShowFlightSearch] = useState(false);
   const [error, setError] = useState('');
   const [createdTrip, setCreatedTrip] = useState(trip || null);
+  const [placeDetails, setPlaceDetails] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,6 +53,16 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
       }
     } else {
       alert('Please create the trip first');
+    }
+  };
+
+  const fetchDetails = async (destination) => {
+    try {
+      const data = await fetchPlaceDetails(destination);
+      console.log('Fetched place details:', data); // Log fetched data
+      setPlaceDetails(data.candidates[0]); // Ensure we use the first candidate from the response
+    } catch (error) {
+      setError('Error fetching place details');
     }
   };
 
@@ -103,11 +115,27 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
           <input
             type="text"
             value={destination}
-            onChange={(e) => setDestination(e.target.value)}
+            onChange={(e) => {
+              setDestination(e.target.value);
+              fetchDetails(e.target.value);
+            }}
             className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
             required
           />
         </div>
+        {placeDetails && (
+          <div className="mt-4">
+            <h3 className="text-lg font-bold">Place Details:</h3>
+            <p>Name: {placeDetails.name}</p>
+            <p>Address: {placeDetails.formatted_address}</p>
+            {placeDetails.photos && placeDetails.photos.length > 0 && (
+              <img
+                src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${placeDetails.photos[0].photo_reference}&key=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}`}
+                alt={placeDetails.name}
+              />
+            )}
+          </div>
+        )}
         <button type="submit" className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
           {trip ? 'Update Trip' : 'Create Trip'}
         </button>

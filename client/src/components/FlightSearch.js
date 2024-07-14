@@ -1,3 +1,4 @@
+// src/components/FlightSearch.js
 import React, { useState } from 'react';
 import axios from '../utils/axios';
 
@@ -71,10 +72,7 @@ const FlightSearch = ({ onFlightSelected }) => {
             required
           />
         </div>
-        <button
-          type="submit"
-          className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors"
-        >
+        <button type="submit" className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
           Search Flights
         </button>
       </form>
