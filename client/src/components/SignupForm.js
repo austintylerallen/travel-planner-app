@@ -6,7 +6,6 @@ const SignupForm = ({ onSwitch }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [username, setUsername] = useState(''); // Add username field
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -18,16 +17,11 @@ const SignupForm = ({ onSwitch }) => {
     }
 
     try {
-      await axios.post('http://localhost:4000/api/auth/signup', { email, password, username }, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true
-      });
+      await axios.post('http://localhost:4000/api/auth/signup', { email, password }, { withCredentials: true });
       setSuccess("Signup successful! Please log in.");
       setError('');
     } catch (err) {
-      setError(err.response.data.message || "Signup failed. Please try again.");
+      setError("Signup failed. Please try again.");
     }
   };
 
@@ -45,15 +39,6 @@ const SignupForm = ({ onSwitch }) => {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
             required
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700">Username:</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
           />
         </div>
         <div>
@@ -76,10 +61,7 @@ const SignupForm = ({ onSwitch }) => {
             required
           />
         </div>
-        <button
-          type="submit"
-          className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors"
-        >
+        <button type="submit" className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
           Sign Up
         </button>
       </form>

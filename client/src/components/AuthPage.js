@@ -2,17 +2,23 @@
 import React, { useState } from 'react';
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
+import { useAuth } from '../context/AuthContext';
 
-const AuthPage = ({ onLogin }) => {
+const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const { login } = useAuth();
 
-  const toggleForm = () => {
+  const switchMode = () => {
     setIsLogin(!isLogin);
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      {isLogin ? <LoginForm onLogin={onLogin} onSwitch={toggleForm} /> : <SignupForm onSwitch={toggleForm} />}
+    <div className="container mx-auto p-6">
+      {isLogin ? (
+        <LoginForm onLogin={login} onSwitch={switchMode} />
+      ) : (
+        <SignupForm onSwitch={switchMode} />
+      )}
     </div>
   );
 };

@@ -1,68 +1,82 @@
-// components/TripForm.jsx
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import axios from '../utils/axios';
+import FlightSearch from './FlightSearch';
 
-const TripForm = () => {
-  const [destination, setDestination] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [notes, setNotes] = useState('');
+const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
+  const [title, setTitle] = useState(trip ? trip.title : '');
+  const [description, setDescription] = useState(trip ? trip.description : '');
+  const [startDate, setStartDate] = useState(trip ? trip.startDate : '');
+  const [endDate, setEndDate] = useState(trip ? trip.endDate : '');
+  const [destination, setDestination] = useState(trip ? trip.destination : '');
+  const [showFlightSearch, setShowFlightSearch] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const navigate = useNavigate();
-  const { id } = useParams();
-
-  useEffect(() => {
-    if (id) {
-      // Fetch the trip details to edit
-      axios.get(`http://localhost:4000/api/trips/${id}`)
-        .then(response => {
-          const { destination, startDate, endDate, notes } = response.data;
-          setDestination(destination);
-          setStartDate(startDate.substring(0, 10)); // Format date for input
-          setEndDate(endDate.substring(0, 10)); // Format date for input
-          setNotes(notes);
-        })
-        .catch(error => setError('Error fetching trip details'));
-    }
-  }, [id]);
+  const [createdTrip, setCreatedTrip] = useState(trip || null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const tripData = { destination, startDate, endDate, notes };
+
+    const tripData = {
+      title,
+      description,
+      startDate,
+      endDate,
+      destination,
+    };
+
     try {
-      if (id) {
-        // Update existing trip
-        await axios.put(`http://localhost:4000/api/trips/${id}`, tripData, { withCredentials: true });
-        setSuccess('Trip updated successfully');
+      let savedTrip;
+      if (trip) {
+        savedTrip = await axios.put(`/trips/${trip._id}`, tripData);
+        onTripUpdated(savedTrip.data);
       } else {
-        // Create new trip
-        await axios.post('http://localhost:4000/api/trips', tripData, { withCredentials: true });
-        setSuccess('Trip created successfully');
+        const response = await axios.post('/trips', tripData);
+        savedTrip = response.data;
+        setCreatedTrip(savedTrip);
+        onTripAdded(savedTrip);
       }
       setError('');
-      setTimeout(() => navigate('/trips'), 2000);
-    } catch (error) {
-      setError(error.response?.data.message || 'Error creating/updating trip');
+      if (onClose) onClose();
+    } catch (err) {
+      setError('Error creating/updating trip');
+    }
+  };
+
+  const handleFlightSelected = async (flight) => {
+    if (createdTrip) {
+      try {
+        await axios.post(`/trips/${createdTrip._id}/add-flight`, flight);
+        alert('Flight added to trip successfully');
+      } catch (err) {
+        setError('Error adding flight to trip');
+      }
+    } else {
+      alert('Please create the trip first');
     }
   };
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center">{id ? 'Edit Trip' : 'Create Trip'}</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">{trip ? 'Edit Trip' : 'Create Trip'}</h2>
       {error && <div className="text-red-500 text-center mb-4">{error}</div>}
-      {success && <div className="text-green-500 text-center mb-4">{success}</div>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-gray-700">Destination:</label>
+          <label className="block text-gray-700">Trip Title:</label>
           <input
             type="text"
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
             required
           />
+        </div>
+        <div>
+          <label className="block text-gray-700">Description:</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
+            required
+          ></textarea>
         </div>
         <div>
           <label className="block text-gray-700">Start Date:</label>
@@ -85,20 +99,30 @@ const TripForm = () => {
           />
         </div>
         <div>
-          <label className="block text-gray-700">Notes:</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+          <label className="block text-gray-700">Destination:</label>
+          <input
+            type="text"
+            value={destination}
+            onChange={(e) => setDestination(e.target.value)}
             className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
+            required
           />
         </div>
-        <button
-          type="submit"
-          className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors"
-        >
-          {id ? 'Update Trip' : 'Create Trip'}
+        <button type="submit" className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
+          {trip ? 'Update Trip' : 'Create Trip'}
         </button>
       </form>
+      {createdTrip && (
+        <div className="mt-6 text-center">
+          <button
+            className="bg-secondary text-white py-2 px-4 rounded-md hover:bg-secondary-dark transition-colors"
+            onClick={() => setShowFlightSearch(!showFlightSearch)}
+          >
+            {showFlightSearch ? 'Hide Flight Search' : 'Search Flights'}
+          </button>
+          {showFlightSearch && <FlightSearch onFlightSelected={handleFlightSelected} />}
+        </div>
+      )}
     </div>
   );
 };

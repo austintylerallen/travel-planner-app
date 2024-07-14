@@ -1,80 +1,105 @@
-// routes/trips.js
 const express = require('express');
-const Trip = require('../models/Trip');
 const router = express.Router();
-const authMiddleware = require('../routes/auth');
+const Trip = require('../models/Trip');
 
-// Get all trips for the authenticated user
-router.get('/', authMiddleware, async (req, res) => {
+// Route to create a new trip
+router.post('/', async (req, res) => {
   try {
-    const trips = await Trip.find({ user: req.user._id });
-    res.json(trips);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching trips', error: err.message });
+    const newTrip = new Trip(req.body);
+    const savedTrip = await newTrip.save();
+    res.status(201).json(savedTrip);
+  } catch (error) {
+    console.error('Error creating trip:', error); // Log the error details
+    res.status(500).json({ message: 'Error creating trip', error });
   }
 });
 
-// Create a new trip
-router.post('/', authMiddleware, async (req, res) => {
-  const { destination, startDate, endDate, notes } = req.body;
+// Route to get all trips
+router.get('/', async (req, res) => {
   try {
-    const newTrip = new Trip({
-      user: req.user._id,
-      destination,
-      startDate,
-      endDate,
-      notes,
-    });
-    await newTrip.save();
-    res.status(201).json(newTrip);
-  } catch (err) {
-    res.status(500).json({ message: 'Error creating trip', error: err.message });
+    const trips = await Trip.find();
+    res.status(200).json(trips);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching trips', error });
   }
 });
 
-// Get a specific trip
-router.get('/:id', authMiddleware, async (req, res) => {
+// Route to delete a trip
+router.delete('/:id', async (req, res) => {
   try {
-    const trip = await Trip.findById(req.params.id);
-    if (!trip || trip.user.toString() !== req.user._id.toString()) {
+    const { id } = req.params;
+    await Trip.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Trip deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting trip', error });
+  }
+});
+
+// Route to update a trip
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedTrip = await Trip.findByIdAndUpdate(id, req.body, { new: true });
+    res.status(200).json(updatedTrip);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating trip', error });
+  }
+});
+
+// Route to add a flight to a trip
+router.post('/:id/add-flight', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const flight = req.body;
+    const trip = await Trip.findById(id);
+    if (!trip) {
       return res.status(404).json({ message: 'Trip not found' });
     }
-    res.json(trip);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching trip', error: err.message });
+
+    trip.flights = trip.flights || [];
+    trip.flights.push(flight);
+    const updatedTrip = await trip.save();
+    res.status(200).json(updatedTrip);
+  } catch (error) {
+    console.error('Error adding flight to trip:', error);
+    res.status(500).json({ message: 'Error adding flight to trip', error });
   }
 });
 
-// Update a trip
-router.put('/:id', authMiddleware, async (req, res) => {
-  const { destination, startDate, endDate, notes } = req.body;
+// Route to edit a flight in a trip
+router.put('/:tripId/edit-flight/:flightId', async (req, res) => {
   try {
-    let trip = await Trip.findById(req.params.id);
-    if (!trip || trip.user.toString() !== req.user._id.toString()) {
+    const { tripId, flightId } = req.params;
+    const updatedFlight = req.body;
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
       return res.status(404).json({ message: 'Trip not found' });
     }
-    trip.destination = destination;
-    trip.startDate = startDate;
-    trip.endDate = endDate;
-    trip.notes = notes;
-    await trip.save();
-    res.json(trip);
-  } catch (err) {
-    res.status(500).json({ message: 'Error updating trip', error: err.message });
+    const flightIndex = trip.flights.findIndex(flight => flight._id.toString() === flightId);
+    if (flightIndex === -1) {
+      return res.status(404).json({ message: 'Flight not found' });
+    }
+    trip.flights[flightIndex] = { ...trip.flights[flightIndex], ...updatedFlight };
+    const updatedTrip = await trip.save();
+    res.status(200).json(updatedTrip);
+  } catch (error) {
+    res.status(500).json({ message: 'Error editing flight', error });
   }
 });
 
-// Delete a trip
-router.delete('/:id', authMiddleware, async (req, res) => {
+// Route to delete a flight from a trip
+router.delete('/:tripId/delete-flight/:flightId', async (req, res) => {
   try {
-    const trip = await Trip.findById(req.params.id);
-    if (!trip || trip.user.toString() !== req.user._id.toString()) {
+    const { tripId, flightId } = req.params;
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
       return res.status(404).json({ message: 'Trip not found' });
     }
-    await trip.remove();
-    res.json({ message: 'Trip deleted' });
-  } catch (err) {
-    res.status(500).json({ message: 'Error deleting trip', error: err.message });
+    trip.flights = trip.flights.filter(flight => flight._id.toString() !== flightId);
+    const updatedTrip = await trip.save();
+    res.status(200).json(updatedTrip);
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting flight', error });
   }
 });
 

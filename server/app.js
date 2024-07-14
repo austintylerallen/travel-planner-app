@@ -1,13 +1,10 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const authRouter = require('./routes/auth'); // Adjust as per your routes
+const authRouter = require('./routes/auth');
 const tripRouter = require('./routes/trips');
-
-// Add after the auth routes
-
+const flightRouter = require('./routes/flights');
 
 require('dotenv').config();
 
@@ -35,7 +32,8 @@ app.use(cors({
 app.use(bodyParser.json());
 
 app.use('/api/auth', authRouter); // Use the authentication routes
-app.use('/api/trips', tripRouter);
+app.use('/api/trips', tripRouter); // Use the trip routes
+app.use('/api/flights', flightRouter); // Use the flight routes
 
 app.get('/', (req, res) => {
   res.send('Server is running');
