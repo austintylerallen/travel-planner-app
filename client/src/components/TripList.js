@@ -1,4 +1,3 @@
-// src/components/TripList.js
 import React from 'react';
 import axios from '../utils/axios';
 
@@ -22,6 +21,19 @@ const TripList = ({ trips, onEdit }) => {
             <p>{trip.description}</p>
             <p>{trip.startDate} - {trip.endDate}</p>
             <p>Destination: {trip.destination}</p>
+            {trip.placeDetails && (
+              <div className="mt-4">
+                <p><strong>Name:</strong> {trip.placeDetails.name}</p>
+                <p><strong>Address:</strong> {trip.placeDetails.formatted_address}</p>
+                {trip.placeDetails.photos && trip.placeDetails.photos.length > 0 && (
+                  <img
+                    src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${trip.placeDetails.photos[0].photo_reference}&key=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}`}
+                    alt={trip.placeDetails.name}
+                    className="mt-2 rounded-lg shadow-md"
+                  />
+                )}
+              </div>
+            )}
             {trip.flights && trip.flights.length > 0 && (
               <div>
                 <h4 className="font-bold mt-4">Flights:</h4>

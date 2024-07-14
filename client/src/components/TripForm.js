@@ -1,28 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import axios from '../utils/axios';
 import FlightSearch from './FlightSearch';
 import { fetchPlaceDetails } from '../utils/googlePlaces';
+import { debounce } from '../utils/debounce';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#root');
+
+// Helper function to format date to yyyy-MM-dd
+const formatDate = (date) => {
+  const d = new Date(date);
+  const month = `0${d.getMonth() + 1}`.slice(-2);
+  const day = `0${d.getDate()}`.slice(-2);
+  const year = d.getFullYear();
+  return `${year}-${month}-${day}`;
+};
+
+// Helper function to format date to "Month Day"
+const formatDisplayDate = (date) => {
+  const options = { month: 'long', day: 'numeric' };
+  return new Date(date).toLocaleDateString(undefined, options);
+};
 
 const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
-  const [title, setTitle] = useState(trip ? trip.title : '');
-  const [description, setDescription] = useState(trip ? trip.description : '');
-  const [startDate, setStartDate] = useState(trip ? trip.startDate : '');
-  const [endDate, setEndDate] = useState(trip ? trip.endDate : '');
+  const [startDate, setStartDate] = useState(trip ? formatDate(trip.startDate) : '');
+  const [endDate, setEndDate] = useState(trip ? formatDate(trip.endDate) : '');
   const [destination, setDestination] = useState(trip ? trip.destination : '');
   const [showFlightSearch, setShowFlightSearch] = useState(false);
   const [error, setError] = useState('');
   const [createdTrip, setCreatedTrip] = useState(trip || null);
-  const [placeDetails, setPlaceDetails] = useState(null);
+  const [placeDetails, setPlaceDetails] = useState(trip ? trip.placeDetails : null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const tripData = {
-      title,
-      description,
+      title: placeDetails?.name || destination,
       startDate,
       endDate,
       destination,
+      placeDetails,
     };
 
     try {
@@ -59,10 +76,21 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
   const fetchDetails = async (destination) => {
     try {
       const data = await fetchPlaceDetails(destination);
-      console.log('Fetched place details:', data); // Log fetched data
-      setPlaceDetails(data.candidates[0]); // Ensure we use the first candidate from the response
+      setPlaceDetails(data.candidates[0]);
     } catch (error) {
       setError('Error fetching place details');
+    }
+  };
+
+  const debouncedFetchDetails = useCallback(debounce(fetchDetails, 300), []);
+
+  const handleDestinationChange = (e) => {
+    const value = e.target.value;
+    setDestination(value);
+    if (value) {
+      debouncedFetchDetails(value);
+    } else {
+      setPlaceDetails(null);
     }
   };
 
@@ -71,25 +99,6 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
       <h2 className="text-2xl font-bold mb-6 text-center">{trip ? 'Edit Trip' : 'Create Trip'}</h2>
       {error && <div className="text-red-500 text-center mb-4">{error}</div>}
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-gray-700">Trip Title:</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700">Description:</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
-            required
-          ></textarea>
-        </div>
         <div>
           <label className="block text-gray-700">Start Date:</label>
           <input
@@ -115,23 +124,21 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
           <input
             type="text"
             value={destination}
-            onChange={(e) => {
-              setDestination(e.target.value);
-              fetchDetails(e.target.value);
-            }}
+            onChange={handleDestinationChange}
             className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
             required
           />
         </div>
         {placeDetails && (
-          <div className="mt-4">
+          <div className="mt-4 p-4 bg-gray-100 rounded-lg shadow-inner">
             <h3 className="text-lg font-bold">Place Details:</h3>
-            <p>Name: {placeDetails.name}</p>
-            <p>Address: {placeDetails.formatted_address}</p>
+            <p><strong>Name:</strong> {placeDetails.name}</p>
+            <p><strong>Address:</strong> {placeDetails.formatted_address}</p>
             {placeDetails.photos && placeDetails.photos.length > 0 && (
               <img
                 src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${placeDetails.photos[0].photo_reference}&key=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}`}
                 alt={placeDetails.name}
+                className="mt-2 rounded-lg shadow-md"
               />
             )}
           </div>
