@@ -120,7 +120,9 @@ const App = () => {
                           <li key={index} className="bg-gray-200 p-4 rounded-lg">
                             <p>Flight Number: {flight.flightNumber}</p>
                             <p>Airline: {getAirlineInfo(flight.airline).name}</p>
-                            <img src={getAirlineInfo(flight.airline).logo} alt={getAirlineInfo(flight.airline).name} className="mt-2 w-16 h-16"/>
+                            {getAirlineInfo(flight.airline).logo && (
+                              <img src={getAirlineInfo(flight.airline).logo} alt={getAirlineInfo(flight.airline).name} className="mt-2 w-16 h-16"/>
+                            )}
                             <p>Departure: {flight.departureAirport} at {formatTime(flight.departureTime)}</p>
                             <p>Arrival: {flight.arrivalAirport} at {formatTime(flight.arrivalTime)}</p>
                           </li>

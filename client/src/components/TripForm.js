@@ -8,6 +8,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { formatDate, formatTime } from '../utils/format';
 import { getAirlineInfo } from '../utils/airlines';
+import '../index.css'; // Ensure this is included to use the global CSS
 
 Modal.setAppElement('#root');
 
@@ -161,7 +162,9 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
             <h3 className="text-lg font-bold mb-2">Selected Flight:</h3>
             <p>Flight Number: {selectedFlight.flightNumber}</p>
             <p>Airline: {getAirlineInfo(selectedFlight.airline).name}</p>
-            <img src={getAirlineInfo(selectedFlight.airline).logo} alt={getAirlineInfo(selectedFlight.airline).name} className="mt-2 w-16 h-16"/>
+            {getAirlineInfo(selectedFlight.airline).logo && (
+              <img src={getAirlineInfo(selectedFlight.airline).logo} alt={getAirlineInfo(selectedFlight.airline).name} className="logo"/>
+            )}
             <p>Departure: {selectedFlight.departureAirport} at {formatTime(selectedFlight.departureTime)}</p>
             <p>Arrival: {selectedFlight.arrivalAirport} at {formatTime(selectedFlight.arrivalTime)}</p>
           </div>
