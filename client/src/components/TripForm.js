@@ -1,14 +1,17 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from '../utils/axios';
 import FlightSearch from './FlightSearch';
 import { fetchPlaceDetails } from '../utils/googlePlaces';
 import { debounce } from '../utils/debounce';
 import Modal from 'react-modal';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { formatDate, formatTime } from '../utils/format';
+import { getAirlineInfo } from '../utils/airlines';
 
 Modal.setAppElement('#root');
 
-// Helper function to format date to yyyy-MM-dd
-const formatDate = (date) => {
+const formatDateInput = (date) => {
   const d = new Date(date);
   const month = `0${d.getMonth() + 1}`.slice(-2);
   const day = `0${d.getDate()}`.slice(-2);
@@ -16,20 +19,14 @@ const formatDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-// Helper function to format date to "Month Day"
-const formatDisplayDate = (date) => {
-  const options = { month: 'long', day: 'numeric' };
-  return new Date(date).toLocaleDateString(undefined, options);
-};
-
 const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
-  const [startDate, setStartDate] = useState(trip ? formatDate(trip.startDate) : '');
-  const [endDate, setEndDate] = useState(trip ? formatDate(trip.endDate) : '');
+  const [startDate, setStartDate] = useState(trip ? formatDateInput(trip.startDate) : '');
+  const [endDate, setEndDate] = useState(trip ? formatDateInput(trip.endDate) : '');
   const [destination, setDestination] = useState(trip ? trip.destination : '');
   const [showFlightSearch, setShowFlightSearch] = useState(false);
   const [error, setError] = useState('');
-  const [createdTrip, setCreatedTrip] = useState(trip || null);
   const [placeDetails, setPlaceDetails] = useState(trip ? trip.placeDetails : null);
+  const [selectedFlight, setSelectedFlight] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,6 +37,7 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
       endDate,
       destination,
       placeDetails,
+      flights: selectedFlight ? [selectedFlight] : []
     };
 
     try {
@@ -47,30 +45,34 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
       if (trip) {
         savedTrip = await axios.put(`/trips/${trip._id}`, tripData);
         onTripUpdated(savedTrip.data);
+        toast.success('Trip updated successfully!');
       } else {
         const response = await axios.post('/trips', tripData);
         savedTrip = response.data;
-        setCreatedTrip(savedTrip);
         onTripAdded(savedTrip);
+        toast.success('Trip created successfully!');
       }
       setError('');
       if (onClose) onClose();
     } catch (err) {
       setError('Error creating/updating trip');
+      toast.error('Error creating/updating trip');
     }
   };
 
-  const handleFlightSelected = async (flight) => {
-    if (createdTrip) {
-      try {
-        await axios.post(`/trips/${createdTrip._id}/add-flight`, flight);
-        alert('Flight added to trip successfully');
-      } catch (err) {
-        setError('Error adding flight to trip');
-      }
-    } else {
-      alert('Please create the trip first');
-    }
+  const handleFlightSelected = (flight) => {
+    const flightSegment = flight.itineraries[0].segments[0];
+    const flightData = {
+      flightNumber: flightSegment.flightNumber || 'N/A',
+      airline: flightSegment.carrierCode || 'N/A',
+      departureAirport: flightSegment.departure.iataCode || 'N/A',
+      departureTime: flightSegment.departure.at || 'N/A',
+      arrivalAirport: flightSegment.arrival.iataCode || 'N/A',
+      arrivalTime: flightSegment.arrival.at || 'N/A',
+    };
+    setSelectedFlight(flightData);
+    setShowFlightSearch(false);
+    toast.success('Flight selected successfully!');
   };
 
   const fetchDetails = async (destination) => {
@@ -79,10 +81,11 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
       setPlaceDetails(data.candidates[0]);
     } catch (error) {
       setError('Error fetching place details');
+      toast.error('Error fetching place details');
     }
   };
 
-  const debouncedFetchDetails = useCallback(debounce(fetchDetails, 300), []);
+  const debouncedFetchDetails = debounce(fetchDetails, 300);
 
   const handleDestinationChange = (e) => {
     const value = e.target.value;
@@ -127,6 +130,7 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
             onChange={handleDestinationChange}
             className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-primary"
             required
+            placeholder="Enter destination city or place"
           />
         </div>
         {placeDetails && (
@@ -143,21 +147,33 @@ const TripForm = ({ trip, onTripAdded, onTripUpdated, onClose }) => {
             )}
           </div>
         )}
-        <button type="submit" className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors">
+        <div className="text-center">
+          <button
+            type="button"
+            className="bg-secondary text-white py-2 px-4 rounded-md hover:bg-secondary-dark transition-colors mt-4"
+            onClick={() => setShowFlightSearch(true)}
+          >
+            {selectedFlight ? 'Change Flight' : 'Add Flight'}
+          </button>
+        </div>
+        {selectedFlight && (
+          <div className="mt-4 p-4 bg-gray-200 rounded-lg shadow-inner">
+            <h3 className="text-lg font-bold mb-2">Selected Flight:</h3>
+            <p>Flight Number: {selectedFlight.flightNumber}</p>
+            <p>Airline: {getAirlineInfo(selectedFlight.airline).name}</p>
+            <img src={getAirlineInfo(selectedFlight.airline).logo} alt={getAirlineInfo(selectedFlight.airline).name} className="mt-2 w-16 h-16"/>
+            <p>Departure: {selectedFlight.departureAirport} at {formatTime(selectedFlight.departureTime)}</p>
+            <p>Arrival: {selectedFlight.arrivalAirport} at {formatTime(selectedFlight.arrivalTime)}</p>
+          </div>
+        )}
+        <button type="submit" className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark transition-colors mt-4">
           {trip ? 'Update Trip' : 'Create Trip'}
         </button>
       </form>
-      {createdTrip && (
-        <div className="mt-6 text-center">
-          <button
-            className="bg-secondary text-white py-2 px-4 rounded-md hover:bg-secondary-dark transition-colors"
-            onClick={() => setShowFlightSearch(!showFlightSearch)}
-          >
-            {showFlightSearch ? 'Hide Flight Search' : 'Search Flights'}
-          </button>
-          {showFlightSearch && <FlightSearch onFlightSelected={handleFlightSelected} />}
-        </div>
-      )}
+      <Modal isOpen={showFlightSearch} onRequestClose={() => setShowFlightSearch(false)} contentLabel="Search Flights">
+        <FlightSearch onFlightSelected={handleFlightSelected} />
+      </Modal>
+      <ToastContainer />
     </div>
   );
 };

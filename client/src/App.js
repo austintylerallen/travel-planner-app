@@ -14,6 +14,8 @@ import Modal from 'react-modal';
 import axios from './utils/axios';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { formatDate, formatTime } from './utils/format';
+import { getAirlineInfo } from './utils/airlines';
 
 Modal.setAppElement('#root');
 
@@ -96,7 +98,7 @@ const App = () => {
               {trips.map((trip) => (
                 <li key={trip._id} className="bg-white p-4 rounded-lg shadow-md">
                   <h3 className="text-xl font-bold">{trip.title}</h3>
-                  <p>{trip.startDate} - {trip.endDate}</p>
+                  <p>{formatDate(trip.startDate)} - {formatDate(trip.endDate)}</p>
                   <p>Destination: {trip.destination}</p>
                   {trip.placeDetails && (
                     <>
@@ -109,6 +111,22 @@ const App = () => {
                         />
                       )}
                     </>
+                  )}
+                  {trip.flights && trip.flights.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-lg font-bold">Flights:</h4>
+                      <ul className="space-y-2">
+                        {trip.flights.map((flight, index) => (
+                          <li key={index} className="bg-gray-200 p-4 rounded-lg">
+                            <p>Flight Number: {flight.flightNumber}</p>
+                            <p>Airline: {getAirlineInfo(flight.airline).name}</p>
+                            <img src={getAirlineInfo(flight.airline).logo} alt={getAirlineInfo(flight.airline).name} className="mt-2 w-16 h-16"/>
+                            <p>Departure: {flight.departureAirport} at {formatTime(flight.departureTime)}</p>
+                            <p>Arrival: {flight.arrivalAirport} at {formatTime(flight.arrivalTime)}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                   <button
                     onClick={() => handleEditTrip(trip)}
@@ -127,7 +145,6 @@ const App = () => {
             </ul>
           </div>
         )}
-
         <Modal isOpen={isModalOpen} onRequestClose={handleCloseModal} contentLabel="Edit Trip">
           {selectedTrip && (
             <TripForm
